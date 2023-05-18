@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.14)
 project(model)
 add_executable("${PROJECT_NAME}" main.cpp)
 
-# include Penning
 add_subdirectory(Gas)
 
 target_link_libraries("${PROJECT_NAME}" PUBLIC Gas)
