@@ -1,9 +1,11 @@
 #include "model.h"
+#include "progressbar.hpp"
+
 #include <cmath>
 #include <tuple>
 #include <fstream>
 
-MF model::size_of_box = 10, model::relaxation_time = 1, model::record_time = 1;
+MF model::size_of_box = 10;
 
 model::model(): particle_number(0) {
 }
@@ -94,19 +96,15 @@ void model::update_coordinates(MF dt) {
     /*
         move particles
     */
-    MF x, y, z;
-    for (particle& p : Particles) {
-        // make Verlet scheme step
-        x = p.x; y = p.y; z = p.z;
-        p.x = 2 * p.x - p.x_prev + p.wx * dt * dt;
-        p.y = 2 * p.y - p.y_prev + p.wy * dt * dt;
-        p.z = 2 * p.z - p.z_prev + p.wz * dt * dt;
-        p.x_prev = x; p.y_prev = y; p.z_prev = z;
 
-        // Calculate new velocity
-        p.vx += 0.5 * dt * (p.wx_prev + p.wx);
-        p.vy += 0.5 * dt * (p.wy_prev + p.wy);
-        p.vz += 0.5 * dt * (p.wz_prev + p.wz);
+    // First integration half-step
+    for (particle& p : Particles) {
+        p.vx += .5 * p.wx * dt;
+        p.vy += .5 * p.wy * dt;
+        p.vz += .5 * p.wz * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.z += p.vz * dt;
 
         // handle borders
         if (p.x > size_of_box) p.x -= size_of_box;
@@ -115,8 +113,15 @@ void model::update_coordinates(MF dt) {
         if (p.x < 0) p.x += size_of_box;
         if (p.y < 0) p.y += size_of_box;
         if (p.z < 0) p.z += size_of_box;
+    }
 
-        // ToDo: diffusion
+    update_acceleration();
+
+    // Second integration half-step
+    for (particle& p : Particles) {
+        p.vx += .5 * p.wx * dt;
+        p.vy += .5 * p.wy * dt;
+        p.vz += .5 * p.wz * dt;
     }
 }
 
@@ -141,7 +146,6 @@ void model::init_step(MF dt) {
 }
 
 void model::make_step(MF dt) {
-    update_acceleration();
     update_coordinates(dt);
 }
 
@@ -150,18 +154,26 @@ void model::simulate(MF time, MF dt) {
         simulation loop
     */
 
-    // save initial coordinates
+    correct_CM();
+
+    // save initial state
     commit();
 
     // make first step
     init_step(dt);
+
     commit();
+
+    progressbar pBar(int (time / dt) - 2);
 
     // main algorithm
     for (size_t i = 2; dt * i < time; ++i) {
         make_step(dt);
         commit();
+
+        pBar.update();
     }
+    std::cout << "\n";
 }
 
 void model::commit() {
@@ -194,18 +206,83 @@ std::string model::header() const {
     return res;
 }
 
-void model::write() const {
+void model::write(const fs::path& file) const {
     /*
         write history to a file
     */
-    std::ofstream out("output.csv");
+    std::ofstream out;
 
-    out << header();
+    fs::path ext = file.extension();
 
-    for (const std::vector<MF>& v : history) {
-        for (int i = 0; i < particle_number - 1; ++i) 
-            out << v[i] << ',';
-        out << v.back() << "\n";
+    progressbar pBar(history.size());
+
+    // writing into .csv format (for pandas)
+    if (ext == ".csv") {
+        out.open(file);
+
+        if (!out.good()) {
+            out.close();
+            throw std::runtime_error("Can't open file "+file.string());
+        }
+
+        out << header();
+
+        for (const std::vector<MF>& v : history) {
+            for (int i = 0; i < v.size() - 1; ++i) 
+                out << v[i] << ',';
+            out << v.back() << "\n";
+
+            pBar.update();
+        }
+
+        out.close();
+
+        std::cout << "\n";
+        return;
+    }
+
+    // writing into binary format (read by numpy.fromfile in python)
+    if (ext == ".dat" || ext == ".data" || ext == ".binary" || ext == "") {
+        out.open(file, std::ios::binary);
+
+        if (!out.good()) {
+            out.close();
+            throw std::runtime_error("Can't open file"+file.string());
+        }
+
+        for (const std::vector<MF>& v : history) {
+            for (int i = 0; i < v.size(); ++i)
+                out.write((char*)(&v[i]), sizeof(MF));
+
+            pBar.update();
+        }
+
+        out.close();
+
+        std::cout << "\n";
+        return;
+    }
+    
+    out.close();
+}
+
+void model::write_last_state(const fs::path& file, const std::string& sep) const {
+    std::ofstream out(file);
+
+    if (!out.good()) {
+        out.close();
+        throw std::runtime_error ("Can't open file "+file.string());
+    }
+
+    out << size_of_box << sep << particle_number << "\n";
+
+    for (const particle& p : Particles) {
+        out << p.x << sep 
+            << p.y << sep 
+            << p.z << sep 
+            << p.vx << sep 
+            << p.vy << sep 
+            << p.vz << "\n";
     }
 
     out.close();

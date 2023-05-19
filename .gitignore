@@ -3,4 +3,7 @@ build
 .exe
 Makefile
 model
+generator
 **.csv
+**.dat
+**.mdl

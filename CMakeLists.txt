@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 project(model)
 add_executable("${PROJECT_NAME}" main.cpp)
+add_executable("generator" generator.cpp)
 
 add_subdirectory(Gas)
 
@@ -11,3 +12,4 @@ target_include_directories("${PROJECT_NAME}" PUBLIC
 
 # install binary
 install(TARGETS "${PROJECT_NAME}" DESTINATION ".")
+install(TARGETS "generator" DESTINATION ".")

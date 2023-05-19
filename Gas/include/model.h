@@ -1,9 +1,15 @@
 #pragma once
+
 #include "particle.h"
+
 #include <vector>
 #include <string>
+#include <filesystem>
 
 using std::size_t;
+namespace fs=std::filesystem;
+
+class parser;
 
 class model {
 private:
@@ -35,11 +41,14 @@ private:
 
 public:
     void simulate(MF time, MF dt);
-    void write() const;
+    void write(const fs::path&) const;
+    void write_last_state(const fs::path&, const std::string& = " ") const;
 
     const std::vector<particle>& get_particles() const;
     std::vector<particle>& get_particles();
     const std::vector< std::vector<MF> >& get_history();
 
-    static MF size_of_box, relaxation_time, record_time;
+    static MF size_of_box;
+
+    friend parser;
 };
