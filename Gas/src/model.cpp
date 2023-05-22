@@ -162,7 +162,7 @@ void model::scale_particles(MF target_temp) {
     /*
         Scales particles' velocities
     */
-    MF coeff = sqrt(target_temp * 3 / kinetic_energy_tmp);
+    MF coeff = sqrt(target_temp * 1.5 * particle_number / kinetic_energy_tmp);
 
     for (particle& p : Particles) {
         p.vx *= coeff;
