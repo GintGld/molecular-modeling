@@ -6,13 +6,24 @@
 #include <fstream>
 
 MF model::size_of_box = 10;
+bool model::without_centering_CM = false;
 
-model::model(): particle_number(0) {
+model::model() : 
+    particle_number(0), 
+    potential_energy_tmp(0), 
+    kinetic_energy_tmp(0) {
 }
 
 void model::add_particle(const particle& p) {
     Particles.push_back(p);
     ++particle_number;
+
+    //std::cout << p.x << ' ' << p.y << ' ' << p.z << ' ' << p.wx << ' ' << p.wy << ' ' << p.wz << "\n";
+
+    // recalculate potential energy
+    update_acceleration();
+    kinetic_energy_tmp += (p.vx * p.vx + p.vy * p.vy + p.vz * p.vz) / 2;
+
 }
 
 void model::correct_CM() {
@@ -26,6 +37,10 @@ void model::correct_CM() {
         Py += p.vy;
         Pz += p.vz;
     }
+
+    // substract center mass kinetic energy
+    kinetic_energy_tmp -= (Px * Px + Py * Py + Pz * Pz) / 2;
+
     Px /= particle_number;
     Py /= particle_number;
     Pz /= particle_number;
@@ -34,6 +49,7 @@ void model::correct_CM() {
         p.vy -= Py;
         p.vz -= Pz;
     }
+
     return;
 }
 
@@ -44,6 +60,7 @@ model::nearest_reflection(const particle& p, const particle& q) {
 
     for (int i = -1; i <= 1; ++i) for (int j = -1; j <= 1; ++j) for (int k = -1; k <= 1; ++k) {
         d = particle::dist(p, {q.x + i * size_of_box, q.y + j * size_of_box, q.z + k * size_of_box});
+        //std::cout <<d << ' ' << p.x << ' ' << p.y << ' ' << p.z << ' ' << q.x << ' ' << q.y << ' ' << q.z << "\n";
         if (L > d) {
             L = d;
             kx = i;
@@ -63,38 +80,48 @@ model::nearest_reflection(const particle& p, const particle& q) {
 void model::update_acceleration() {
     /*
         calculate acceleration
+        and potential energy
         for all particles
     */
-    MF k, L, wx, wy, wz;
+    //MF k, L, wx, wy, wz;
 
-    // dump accelearations
+    // dump accelerations
     for (particle& p : Particles) {
-        p.wx_prev = p.wx;
-        p.wy_prev = p.wy;
-        p.wz_prev = p.wz;
+        //p.wx_prev = p.wx;
+        //p.wy_prev = p.wy;
+        //p.wz_prev = p.wz;
         p.wx = 0;
         p.wy = 0;
         p.wz = 0;
     }
+
+    potential_energy_tmp = 0;
 
     for (int i = 0; i < particle_number; ++i) {
         for (int j = i + 1; j < particle_number; ++j) {
             // Get tuple {L, x, y, z}, unpuck it
             // (x, y, z) -- vector between 2 particles
             const auto [L, x, y, z] = nearest_reflection(Particles[i], Particles[j]);
-            k = 24 * (2 * pow(L, -14) - pow(L, -8));
-            wx = x * k;
-            wy = y * k;
-            wz = z * k;
+
+            //std::cout << L << ' ' << x << ' ' << y << ' ' << z << "\n";
+            MF k = 24 * ( 2 * pow(L, -14) - pow(L, -8) );
+            MF wx = x * k;
+            MF wy = y * k;
+            MF wz = z * k;
             Particles[i].update_w( wx,  wy,  wz);
             Particles[j].update_w(-wx, -wy, -wz);
+
+            potential_energy_tmp += 4 * ( pow(L, -12) - pow(L, -6) );
         }
     }
+
+    //potential_energy.push_back(potential_energy_tmp);
 }
 
 void model::update_coordinates(MF dt) {
     /*
-        move particles
+        move particles and
+        calculate kinetic energy
     */
 
     // First integration half-step
@@ -117,12 +144,17 @@ void model::update_coordinates(MF dt) {
 
     update_acceleration();
 
+    kinetic_energy_tmp = 0;
+
     // Second integration half-step
     for (particle& p : Particles) {
         p.vx += .5 * p.wx * dt;
         p.vy += .5 * p.wy * dt;
         p.vz += .5 * p.wz * dt;
+
+        kinetic_energy_tmp += (p.vx * p.vx + p.vy * p.vy + p.vz * p.vz) / 2;
     }
+    //kinetic_energy.push_back(kinetic_energy_tmp);
 }
 
 void model::init_step(MF dt) {
@@ -130,19 +162,27 @@ void model::init_step(MF dt) {
         initial step when 
         there is no previous state
     */
-    update_acceleration();
+    //update_acceleration();
+    // acceleration is actual because of model::add_particle(const particle&)
+
+
+    MF kitetic_energy_tmp = 0;
 
     for (particle& p : Particles) {
-        p.x_prev = p.x;
-        p.y_prev = p.y;
-        p.z_prev = p.z;
+        //p.x_prev = p.x; deprecated
+        //p.y_prev = p.y; deprecated
+        //p.z_prev = p.z; deprecated
         p.x += p.vx * dt + 0.5 * p.wx * dt * dt;
         p.y += p.vy * dt + 0.5 * p.wy * dt * dt;
         p.z += p.vz * dt + 0.5 * p.wz * dt * dt;
         p.vx += p.wx * dt;
         p.vy += p.wy * dt;
         p.vz += p.wz * dt;
+
+        kitetic_energy_tmp += (p.vx * p.vx + p.vy * p.vy + p.vz * p.vz) / 2;
     }
+
+    //kinetic_energy.push_back(kitetic_energy_tmp);
 }
 
 void model::make_step(MF dt) {
@@ -154,7 +194,8 @@ void model::simulate(MF time, MF dt) {
         simulation loop
     */
 
-    correct_CM();
+    if (!without_centering_CM)
+        correct_CM();
 
     // save initial state
     commit();
@@ -191,6 +232,8 @@ void model::commit() {
     }
     history.push_back(hist_tmp);
     hist_tmp.clear();
+    kinetic_energy.push_back(kinetic_energy_tmp);
+    potential_energy.push_back(potential_energy_tmp);
 }
 
 std::string model::header() const {
@@ -285,6 +328,64 @@ void model::write_last_state(const fs::path& file, const std::string& sep) const
             << p.vz << "\n";
     }
 
+    out.close();
+}
+
+void model::write_energy(const fs::path& file, const std::string& sep) const {
+    /*
+        write Energies to a file
+    */
+    std::ofstream out;
+
+    fs::path ext = file.extension();
+
+    progressbar pBar(kinetic_energy.size());
+
+    // writing into .csv format (for pandas)
+    if (ext == ".csv") {
+        out.open(file);
+
+        if (!out.good()) {
+            out.close();
+            throw std::runtime_error("Can't open file "+file.string());
+        }
+
+        out << "K" << sep << "P\n";
+
+        for (int i = 0; i < kinetic_energy.size(); ++i) {
+            out << kinetic_energy[i] << sep << potential_energy[i] << "\n";
+
+            pBar.update();
+        }
+
+        out.close();
+
+        std::cout << "\n";
+        return;
+    }
+
+    // writing into binary format (read by numpy.fromfile in python)
+    if (ext == ".dat" || ext == ".data" || ext == ".binary" || ext == "") {
+        out.open(file, std::ios::binary);
+
+        if (!out.good()) {
+            out.close();
+            throw std::runtime_error("Can't open file"+file.string());
+        }
+
+        for (int i = 0; i < kinetic_energy.size(); ++i) {
+            out.write((char*)(&kinetic_energy[i]), sizeof(MF));
+            out.write((char*)(&potential_energy[i]), sizeof(MF));
+
+            pBar.update();
+        }
+
+        out.close();
+
+        std::cout << "\n";
+        return;
+    }
+    
     out.close();
 }
 

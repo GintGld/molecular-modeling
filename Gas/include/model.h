@@ -15,6 +15,8 @@ class model {
 private:
     std::vector<particle> Particles;
     std::vector< std::vector<MF> >history;
+    std::vector<MF> kinetic_energy, potential_energy;
+    MF kinetic_energy_tmp, potential_energy_tmp;
     std::vector<MF> hist_tmp;
     size_t particle_number;
 
@@ -43,12 +45,12 @@ public:
     void simulate(MF time, MF dt);
     void write(const fs::path&) const;
     void write_last_state(const fs::path&, const std::string& = " ") const;
+    void write_energy(const fs::path&, const std::string& = ",") const;
 
     const std::vector<particle>& get_particles() const;
     std::vector<particle>& get_particles();
     const std::vector< std::vector<MF> >& get_history();
 
     static MF size_of_box;
-
-    friend parser;
+    static bool without_centering_CM;
 };

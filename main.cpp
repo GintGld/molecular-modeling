@@ -48,6 +48,10 @@ get_parameters(int argc, char** argv) {
             last_state = true;
             continue;
         }
+        if ( compare(argv[i], "--without-centering-CM") ) {
+            model::without_centering_CM = true;
+            continue;
+        }
         throw std::runtime_error("Unrecognized option "+std::string(argv[i]));
     }
 
@@ -78,10 +82,10 @@ int main(int argc, char** argv) {
     input = fs::path("./configs")/input;
     output = fs::path("./outputs")/output;
 
-    cout << "input file: " << input.string() << "\n"
+    cout << "input  file: " << input.string() << "\n"
          << "output file: " << output.string() << "\n"
          << "simulation time: " << time << "\n"
-         << "time step: " << dt << "\n"
+         << "time step:       " << dt << "\n"
          << delimiter;
 
     try{
@@ -117,6 +121,16 @@ int main(int argc, char** argv) {
     gas.write(output);
 
     cout << "Data written to " << output.string() << "\n";
+
+    cout << "Writing energies...\n";
+
+    fs::path energy_file = fs::path(
+        "./outputs/"+input.stem().string()+"-energy"+output.extension().string()
+    );
+
+    gas.write_energy(energy_file);
+
+    cout << "Data written to " << energy_file.string() << "\n";
 
     if (last_state) {
         fs::path last_state_path = input.parent_path()/

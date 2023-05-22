@@ -41,8 +41,12 @@ void parser::read(const fs::path& _file) {
 
 model parser::get_model() const {
     model mod;
-    mod.particle_number = particle_number;
-    mod.Particles = Particles;
+
+    for (const particle& p : Particles)
+        mod.add_particle(p);
+
+    //mod.particle_number = particle_number;
+    //mod.Particles = Particles;
 
     return mod;
 }

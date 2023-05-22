@@ -5,7 +5,8 @@ particle::particle() {}
 
 particle::particle(MF x, MF y, MF z, MF vx, MF vy, MF vz):
     x(x), y(y), z(z),
-    vx(vx), vy(vy), vz(vz) {}
+    vx(vx), vy(vy), vz(vz),
+    wx(0), wy(0), wz(0) {}
 
 void particle::update_w(MF wx_, MF wy_, MF wz_) {
     wx += wx_;
