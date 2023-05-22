@@ -34,11 +34,6 @@ bool compare(char* s1, std::string s2) {
 }
 
 options_struct get_parameters(int argc, char** argv) {
-    //fs::path input_file, input_prefix, output_file, output_prefix;
-    //MF time, dt;
-    //bool f_time = false, f_dt = false, f_input = false, f_output = false;
-    //bool last_state = false;
-
     options_struct options;
 
     for (int i = 1; i < argc; ++i) {
@@ -91,8 +86,7 @@ options_struct get_parameters(int argc, char** argv) {
     if (!options.is_full()) {
         throw std::runtime_error ("Not enought parameters.\nRequired: -t, -dt, --input");
     }
-    //if (!f_output)
-    //    output_file = fs::path(input_file.stem().string()+".csv");
+    
     options.update_output();
 
     return options;

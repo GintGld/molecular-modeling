@@ -20,8 +20,6 @@ void model::add_particle(const particle& p) {
     Particles.push_back(p);
     ++particle_number;
 
-    //std::cout << p.x << ' ' << p.y << ' ' << p.z << ' ' << p.wx << ' ' << p.wy << ' ' << p.wz << "\n";
-
     // recalculate potential energy
     update_acceleration();
     kinetic_energy_tmp += (p.vx * p.vx + p.vy * p.vy + p.vz * p.vz) / 2;
@@ -62,7 +60,6 @@ model::nearest_reflection(const particle& p, const particle& q) {
 
     for (int i = -1; i <= 1; ++i) for (int j = -1; j <= 1; ++j) for (int k = -1; k <= 1; ++k) {
         d = particle::dist(p, {q.x + i * size_of_box, q.y + j * size_of_box, q.z + k * size_of_box});
-        //std::cout <<d << ' ' << p.x << ' ' << p.y << ' ' << p.z << ' ' << q.x << ' ' << q.y << ' ' << q.z << "\n";
         if (L > d) {
             L = d;
             kx = i;
@@ -85,13 +82,9 @@ void model::update_acceleration() {
         and potential energy
         for all particles
     */
-    //MF k, L, wx, wy, wz;
 
     // dump accelerations
     for (particle& p : Particles) {
-        //p.wx_prev = p.wx;
-        //p.wy_prev = p.wy;
-        //p.wz_prev = p.wz;
         p.wx = 0;
         p.wy = 0;
         p.wz = 0;
@@ -105,7 +98,6 @@ void model::update_acceleration() {
             // (x, y, z) -- vector between 2 particles
             const auto [L, x, y, z] = nearest_reflection(Particles[i], Particles[j]);
 
-            //std::cout << L << ' ' << x << ' ' << y << ' ' << z << "\n";
             MF k = 24 * ( 2 * pow(L, -14) - pow(L, -8) );
             MF wx = x * k;
             MF wy = y * k;
@@ -116,8 +108,6 @@ void model::update_acceleration() {
             potential_energy_tmp += 4 * ( pow(L, -12) - pow(L, -6) );
         }
     }
-
-    //potential_energy.push_back(potential_energy_tmp);
 }
 
 void model::update_coordinates(MF dt) {
@@ -156,7 +146,6 @@ void model::update_coordinates(MF dt) {
 
         kinetic_energy_tmp += (p.vx * p.vx + p.vy * p.vy + p.vz * p.vz) / 2;
     }
-    //kinetic_energy.push_back(kinetic_energy_tmp);
 }
 
 void model::scale_particles(MF target_temp) {
@@ -179,16 +168,13 @@ void model::init_step(MF dt) {
         initial step when 
         there is no previous state
     */
-    //update_acceleration();
+
     // acceleration is actual because of model::add_particle(const particle&)
 
 
     MF kitetic_energy_tmp = 0;
 
     for (particle& p : Particles) {
-        //p.x_prev = p.x; deprecated
-        //p.y_prev = p.y; deprecated
-        //p.z_prev = p.z; deprecated
         p.x += p.vx * dt + 0.5 * p.wx * dt * dt;
         p.y += p.vy * dt + 0.5 * p.wy * dt * dt;
         p.z += p.vz * dt + 0.5 * p.wz * dt * dt;
@@ -198,8 +184,6 @@ void model::init_step(MF dt) {
 
         kitetic_energy_tmp += (p.vx * p.vx + p.vy * p.vy + p.vz * p.vz) / 2;
     }
-
-    //kinetic_energy.push_back(kitetic_energy_tmp);
 }
 
 void model::make_step(MF dt) {
@@ -424,13 +408,8 @@ void model::write_ovito(const fs::path& file) const {
     for (size_t i = 0; i < history.size(); ++i) {
         out << std::fixed << std::setprecision(8) << particle_number << "\n\n";
 
-        // тут неправильно, починить
-        //for (const MF& d : history[i])
-        //    out << d << ' ';
-
         for (int k = 0; k < particle_number; ++k)
             out << "1 " << history[i][6*k] << ' ' << history[i][6*k+1] << ' ' << history[i][6*k+2] << "\n";
-        //out << "\n";
 
         pBar.update();
     }
