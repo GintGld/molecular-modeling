@@ -11,5 +11,5 @@ target_include_directories("${PROJECT_NAME}" PUBLIC
                         "${PROJECT_SOURCE_DIR}/src")
 
 # install binary
-install(TARGETS "${PROJECT_NAME}" DESTINATION ".")
-install(TARGETS "generator" DESTINATION ".")
+install(TARGETS "${PROJECT_NAME}" DESTINATION "./bin")
+install(TARGETS "generator" DESTINATION "./bin")
