@@ -8,7 +8,7 @@ using std::cout;
 struct options_struct {
     fs::path input_file, output_extension;
     MF time, dt, target_temperature;
-    bool last_state;
+    bool last_state = false;
 
     bool f_time = false, f_dt = false, f_input = false, f_output = false;
 
@@ -32,9 +32,7 @@ bool compare(char* s1, std::string s2) {
     return f;
 }
 
-//std::tuple<fs::path, fs::path, MF, MF, bool> // {input_file, output_file, time, dt, last_state}
-options_struct
-get_parameters(int argc, char** argv) {
+options_struct get_parameters(int argc, char** argv) {
     //fs::path input_file, input_prefix, output_file, output_prefix;
     //MF time, dt;
     //bool f_time = false, f_dt = false, f_input = false, f_output = false;
