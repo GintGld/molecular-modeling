@@ -38,11 +38,12 @@ private:
 
     void save_point(const particle&);
     void commit();
+    void scale_particles(MF target_temp);
 
     std::string header() const;
 
 public:
-    void simulate(MF time, MF dt);
+    void simulate(MF time, MF dt, MF target_temp = 1);
     void write(const fs::path&) const;
     void write_last_state(const fs::path&, const std::string& = " ") const;
     void write_energy(const fs::path&, const std::string& = ",") const;
@@ -53,4 +54,5 @@ public:
 
     static MF size_of_box;
     static bool without_centering_CM;
+    static MF scale;
 };

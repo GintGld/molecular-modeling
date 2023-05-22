@@ -7,6 +7,7 @@
 
 MF model::size_of_box = 10;
 bool model::without_centering_CM = false;
+MF model::scale = false;
 
 model::model() : 
     particle_number(0), 
@@ -157,6 +158,21 @@ void model::update_coordinates(MF dt) {
     //kinetic_energy.push_back(kinetic_energy_tmp);
 }
 
+void model::scale_particles(MF target_temp) {
+    /*
+        Scales particles' velocities
+    */
+    MF coeff = sqrt(target_temp * 3 / kinetic_energy_tmp);
+
+    for (particle& p : Particles) {
+        p.vx *= coeff;
+        p.vy *= coeff;
+        p.vz *= coeff;
+    }
+
+    return;
+}
+
 void model::init_step(MF dt) {
     /*
         initial step when 
@@ -189,7 +205,7 @@ void model::make_step(MF dt) {
     update_coordinates(dt);
 }
 
-void model::simulate(MF time, MF dt) {
+void model::simulate(MF time, MF dt, MF target_temp) {
     /*
         simulation loop
     */
@@ -210,6 +226,11 @@ void model::simulate(MF time, MF dt) {
     // main algorithm
     for (size_t i = 2; dt * i < time; ++i) {
         make_step(dt);
+
+        // scaling
+        if (scale)
+            scale_particles(target_temp);
+
         commit();
 
         pBar.update();
