@@ -1,5 +1,6 @@
 #include "Gas/gas.h"
 #include <iostream>
+#include <chrono>
 
 #define delimiter "----------------------\n"
 
@@ -8,7 +9,7 @@ using std::cout;
 struct options_struct {
     fs::path input_file, output_extension;
     MF time, dt, target_temperature;
-    bool last_state = false;
+    bool last_state = false, ovito = false;
 
     bool f_time = false, f_dt = false, f_input = false, f_output = false;
 
@@ -80,6 +81,10 @@ options_struct get_parameters(int argc, char** argv) {
             } catch(std::exception& e) {throw e;}
             continue;
         }
+        if ( compare(argv[i], "--ovito") ) {
+            options.ovito = true;
+            continue;
+        }
         throw std::runtime_error("Unrecognized option "+std::string(argv[i]));
     }
 
@@ -138,7 +143,16 @@ int main(int argc, char** argv) {
 
     cout << "Start simulation...\n";
 
+    auto begin = std::chrono::steady_clock::now();
+
     gas.simulate(options.time, options.dt, options.target_temperature);
+
+    auto end = std::chrono::steady_clock::now();
+
+    auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
+
+    std::cout << "Simulation time: " << elapsed_ms.count() / 1000 << " s\n";
+
 
     cout << "Finish simulation\n"
          << delimiter;
@@ -158,6 +172,16 @@ int main(int argc, char** argv) {
     gas.write_energy(energy_file);
 
     cout << "Data written to " << energy_file.string() << "\n";
+
+    if (options.ovito) {
+        fs::path ovito_path = fs::path("./ovito")/input.stem().concat(".xyz");
+
+        cout << "Writing .xyz file for ovito...\n";
+
+        gas.write_ovito(ovito_path);
+
+        cout << "XYZ file written to " << ovito_path.string() << "\n";
+    }
 
     if (options.last_state) {
         fs::path last_state_path = input.parent_path()/

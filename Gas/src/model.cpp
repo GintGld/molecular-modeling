@@ -1,6 +1,7 @@
 #include "model.h"
 #include "progressbar.hpp"
 
+#include <iomanip> // std::setprecision
 #include <cmath>
 #include <tuple>
 #include <fstream>
@@ -408,6 +409,35 @@ void model::write_energy(const fs::path& file, const std::string& sep) const {
     }
     
     out.close();
+}
+
+void model::write_ovito(const fs::path& file) const {
+    std::ofstream out(file);
+
+    if (!out.good()) {
+        out.close();
+        throw std::runtime_error("Can't open "+file.string());
+    }
+
+    progressbar pBar(history.size());
+
+    for (size_t i = 0; i < history.size(); ++i) {
+        out << std::fixed << std::setprecision(8) << particle_number << "\n\n";
+
+        // тут неправильно, починить
+        //for (const MF& d : history[i])
+        //    out << d << ' ';
+
+        for (int k = 0; k < particle_number; ++k)
+            out << "1 " << history[i][6*k] << ' ' << history[i][6*k+1] << ' ' << history[i][6*k+2] << "\n";
+        //out << "\n";
+
+        pBar.update();
+    }
+    std::cout << "\n";
+
+    out.close();
+    return;
 }
 
 const std::vector<particle>& model::get_particles() const {

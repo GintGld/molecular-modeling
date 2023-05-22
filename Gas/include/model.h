@@ -47,6 +47,7 @@ public:
     void write(const fs::path&) const;
     void write_last_state(const fs::path&, const std::string& = " ") const;
     void write_energy(const fs::path&, const std::string& = ",") const;
+    void write_ovito(const fs::path&) const;
 
     const std::vector<particle>& get_particles() const;
     std::vector<particle>& get_particles();
