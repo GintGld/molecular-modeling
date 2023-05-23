@@ -98,14 +98,19 @@ void model::update_acceleration() {
             // (x, y, z) -- vector between 2 particles
             const auto [L, x, y, z] = nearest_reflection(Particles[i], Particles[j]);
 
-            MF k = 24 * ( 2 * pow(L, -14) - pow(L, -8) );
+            MF L6 = pow(L, -6);
+            MF L8 = L6 / L / L;
+
+            //MF k = 24 * ( 2 * pow(L, -14) - pow(L, -8) );
+            MF k = 24 * ( 2 * L8 * L6 - L8 );
             MF wx = x * k;
             MF wy = y * k;
             MF wz = z * k;
             Particles[i].update_w( wx,  wy,  wz);
             Particles[j].update_w(-wx, -wy, -wz);
 
-            potential_energy_tmp += 4 * ( pow(L, -12) - pow(L, -6) );
+            //potential_energy_tmp += 4 * ( pow(L, -12) - pow(L, -6) );
+            potential_energy_tmp += 4 * ( L6 * L6 -  L6 );
         }
     }
 }
