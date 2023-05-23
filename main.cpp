@@ -21,7 +21,7 @@ struct options_struct {
 
     void update_output() {
         if (!f_output)
-            output_extension = fs::path(".csv");
+            output_extension = fs::path(".dat");
         return;
     }
 };
