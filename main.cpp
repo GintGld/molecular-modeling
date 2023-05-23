@@ -105,8 +105,8 @@ int main(int argc, char** argv) {
     }
 
     // defined directories for saving data
-    fs::path input  = fs::path("./configs")/options.input_file;
-    fs::path output = fs::path("./outputs")/options.input_file.stem().concat(options.output_extension.string());
+    fs::path input  = fs::current_path()/fs::path("configs")/options.input_file;
+    fs::path output = fs::current_path()/fs::path("outputs")/options.input_file.stem().concat(options.output_extension.string());
 
     cout << "input  file: " << input.string() << "\n"
          << "output file: " << output.string() << "\n"
@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
     cout << "Data written to " << energy_file.string() << "\n";
 
     if (options.ovito) {
-        fs::path ovito_path = fs::path("./ovito")/input.stem().concat(".xyz");
+        fs::path ovito_path = fs::current_path()/fs::path("ovito")/input.stem().concat(".xyz");
 
         cout << "Writing .xyz file for ovito...\n";
 
