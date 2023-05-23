@@ -30,7 +30,7 @@ private:
     void update_acceleration();
     void update_coordinates(MF dt);
 
-    static std::tuple<MF, MF, MF, MF> // L, x, y, z
+    static std::tuple<MF, MF, MF> // x, y, z
     nearest_reflection(const particle&, const particle&);
 
     void init_step(MF dt);

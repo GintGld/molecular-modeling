@@ -53,26 +53,29 @@ void model::correct_CM() {
     return;
 }
 
-std::tuple<MF, MF, MF, MF>
+std::tuple<MF, MF, MF>
 model::nearest_reflection(const particle& p, const particle& q) {
-    MF L = size_of_box, d;
-    int kx, ky, kz;
+    int kx = 0, ky = 0, kz = 0;
 
-    for (int i = -1; i <= 1; ++i) for (int j = -1; j <= 1; ++j) for (int k = -1; k <= 1; ++k) {
-        d = particle::dist(p, {q.x + i * size_of_box, q.y + j * size_of_box, q.z + k * size_of_box});
-        if (L > d) {
-            L = d;
-            kx = i;
-            ky = j;
-            kz = k;
-        }
-    }
+    if (p.x - q.x > size_of_box / 2)
+        kx = -1;
+    else if (q.x - p.x > size_of_box / 2)
+        kx = 1;
+
+    if (p.y - q.y > size_of_box / 2)
+        ky = -1;
+    else if (q.y - p.y > size_of_box / 2)
+        ky = 1;
+
+    if (p.z - q.z > size_of_box / 2)
+        kz = -1;
+    else if (q.z - p.z > size_of_box / 2)
+        kz = 1;
 
     return {
-        L, 
-        p.x - q.x - kx * size_of_box, 
-        p.y - q.y - ky * size_of_box,
-        p.z - q.z - kz * size_of_box
+        p.x - q.x + kx * size_of_box,
+        p.y - q.y + ky * size_of_box,
+        p.z - q.z + kz * size_of_box
     };
 }
 
@@ -94,23 +97,25 @@ void model::update_acceleration() {
 
     for (int i = 0; i < particle_number; ++i) {
         for (int j = i + 1; j < particle_number; ++j) {
-            // Get tuple {L, x, y, z}, unpuck it
-            // (x, y, z) -- vector between 2 particles
-            const auto [L, x, y, z] = nearest_reflection(Particles[i], Particles[j]);
+            // Get tuple {x, y, z}, unpuck it
+            // (x, y, z) -- vector from p_i to p_j
+            const auto [x, y, z] = nearest_reflection(Particles[i], Particles[j]);
 
-            MF L6 = pow(L, -6);
-            MF L8 = L6 / L / L;
+            MF L = sqrt(x * x + y * y + z * z);
 
-            //MF k = 24 * ( 2 * pow(L, -14) - pow(L, -8) );
-            MF k = 24 * ( 2 * L8 * L6 - L8 );
+            //MF L6 = pow(L, -6); // L6 -- L^-6
+            //MF L8 = L6 / L / L; // L8 -- L^-8
+
+            MF k = 24 * ( 2 * pow(L, -14) - pow(L, -8) );
+            //MF k = 24 * ( 2 * L8 * L6 - L8 );
             MF wx = x * k;
             MF wy = y * k;
             MF wz = z * k;
             Particles[i].update_w( wx,  wy,  wz);
             Particles[j].update_w(-wx, -wy, -wz);
 
-            //potential_energy_tmp += 4 * ( pow(L, -12) - pow(L, -6) );
-            potential_energy_tmp += 4 * ( L6 * L6 -  L6 );
+            potential_energy_tmp += 4 * ( pow(L, -12) - pow(L, -6) );
+            //potential_energy_tmp += 4 * ( L6 * L6 -  L6 );
         }
     }
 }
@@ -206,15 +211,15 @@ void model::simulate(MF time, MF dt, MF target_temp) {
     // save initial state
     commit();
 
-    // make first step
-    init_step(dt);
+    //// make first step
+    //init_step(dt);
+//
+    //commit();
 
-    commit();
-
-    progressbar pBar(int (time / dt) - 2);
+    progressbar pBar(int (time / dt) - 1);
 
     // main algorithm
-    for (size_t i = 2; dt * i < time; ++i) {
+    for (size_t i = 1; dt * i < time; ++i) {
         make_step(dt);
 
         // scaling
