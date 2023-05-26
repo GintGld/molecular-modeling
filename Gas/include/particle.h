@@ -5,10 +5,9 @@
 struct particle {
     MF 
         x, y, z,
-        //x_prev, y_prev, z_prev, deprecated
         vx, vy, vz,
-        wx, wy, wz;
-        //wx_prev, wy_prev, wz_prev; deprecated
+        wx, wy, wz,
+        step_x, step_y, step_z;
 
     particle();
     particle(MF x, MF y, MF z, MF vx, MF vy, MF vz);

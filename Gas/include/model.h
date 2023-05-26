@@ -47,7 +47,7 @@ public:
     void write(const fs::path&) const;
     void write_last_state(const fs::path&, const std::string& = " ") const;
     void write_energy(const fs::path&, const std::string& = ",") const;
-    void write_ovito(const fs::path&) const;
+    void write_ovito(const fs::path&, const int = 1) const;
 
     const std::vector<particle>& get_particles() const;
     std::vector<particle>& get_particles();
@@ -55,5 +55,5 @@ public:
 
     static MF size_of_box;
     static bool without_centering_CM;
-    static MF scale;
+    static MF scale, diffusion;
 };

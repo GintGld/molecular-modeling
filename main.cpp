@@ -10,16 +10,20 @@ struct options_struct {
     fs::path input_file, output_extension;
     MF time, dt, target_temperature;
     bool last_state = false, ovito = false;
+    int ovito_step;
 
     bool f_time = false, f_dt = false, f_input = false, f_output = false;
 
     options_struct() {};
 
     bool is_full() const {
-        return f_time && f_dt && f_input;
+        return f_time && f_input;
     }
 
-    void update_output() {
+    void set_default() {
+        if (!f_dt) {
+            dt = 0.001;
+        }
         if (!f_output)
             output_extension = fs::path(".dat");
         return;
@@ -77,17 +81,27 @@ options_struct get_parameters(int argc, char** argv) {
             continue;
         }
         if ( compare(argv[i], "--ovito") ) {
-            options.ovito = true;
+            try {
+                options.ovito = true;
+                if (i < argc || argv[i + 1][0] == '-')
+                    options.ovito_step = 1;
+                else 
+                    options.ovito_step = std::stoi(argv[++i]);
+            } catch(std::exception& e) {throw e;}
+            continue;
+        }
+        if ( compare(argv[i], "--diffusion") ) {
+            model::diffusion = true;
             continue;
         }
         throw std::runtime_error("Unrecognized option "+std::string(argv[i]));
     }
 
     if (!options.is_full()) {
-        throw std::runtime_error ("Not enought parameters.\nRequired: -t, -dt, --input");
+        throw std::runtime_error ("Not enought parameters.\nRequired: -t, --input");
     }
     
-    options.update_output();
+    options.set_default();
 
     return options;
 }
@@ -172,7 +186,7 @@ int main(int argc, char** argv) {
 
         cout << "Writing .xyz file for ovito...\n";
 
-        gas.write_ovito(ovito_path);
+        gas.write_ovito(ovito_path, options.ovito_step);
 
         cout << "XYZ file written to " << ovito_path.string() << "\n";
     }

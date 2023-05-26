@@ -8,7 +8,7 @@
 
 MF model::size_of_box = 10;
 bool model::without_centering_CM = false;
-MF model::scale = false;
+MF model::scale = false, model::diffusion = false;
 
 model::model() : 
     particle_number(0), 
@@ -136,12 +136,12 @@ void model::update_coordinates(MF dt) {
         p.z += p.vz * dt;
 
         // handle borders
-        if (p.x > size_of_box) p.x -= size_of_box;
-        if (p.y > size_of_box) p.y -= size_of_box;
-        if (p.z > size_of_box) p.z -= size_of_box;
-        if (p.x < 0) p.x += size_of_box;
-        if (p.y < 0) p.y += size_of_box;
-        if (p.z < 0) p.z += size_of_box;
+        if (p.x > size_of_box) {p.x -= size_of_box; ++p.step_x;}
+        if (p.y > size_of_box) {p.y -= size_of_box; ++p.step_y;}
+        if (p.z > size_of_box) {p.z -= size_of_box; ++p.step_z;}
+        if (p.x < 0) {p.x += size_of_box; --p.step_x;}
+        if (p.y < 0) {p.y += size_of_box; --p.step_y;}
+        if (p.z < 0) {p.z += size_of_box; --p.step_z;}
     }
 
     update_acceleration();
@@ -239,9 +239,15 @@ void model::commit() {
         (x, y, z, vx, vy, vz), (...), ...
     */
     for (const particle& p : Particles) {
-        hist_tmp.push_back(p.x);
-        hist_tmp.push_back(p.y);
-        hist_tmp.push_back(p.z);
+        if (!diffusion) {
+            hist_tmp.push_back(p.x);
+            hist_tmp.push_back(p.y);
+            hist_tmp.push_back(p.z);
+        } else {
+            hist_tmp.push_back(p.x + size_of_box * p.step_x);
+            hist_tmp.push_back(p.y + size_of_box * p.step_y);
+            hist_tmp.push_back(p.z + size_of_box * p.step_z);
+        }
         hist_tmp.push_back(p.vx);
         hist_tmp.push_back(p.vy);
         hist_tmp.push_back(p.vz);
@@ -405,7 +411,7 @@ void model::write_energy(const fs::path& file, const std::string& sep) const {
     out.close();
 }
 
-void model::write_ovito(const fs::path& file) const {
+void model::write_ovito(const fs::path& file, const int step) const {
     std::ofstream out(file);
 
     if (!out.good()) {
@@ -413,9 +419,9 @@ void model::write_ovito(const fs::path& file) const {
         throw std::runtime_error("Can't open "+file.string());
     }
 
-    progressbar pBar(history.size());
+    progressbar pBar(history.size() / step);
 
-    for (size_t i = 0; i < history.size(); ++i) {
+    for (size_t i = 0; i < history.size(); i += step) {
         out << std::fixed << std::setprecision(8) << particle_number << "\n\n";
 
         for (int k = 0; k < particle_number; ++k)
