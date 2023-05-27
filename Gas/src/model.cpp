@@ -10,6 +10,17 @@ MF model::size_of_box = 10;
 bool model::without_centering_CM = false;
 MF model::scale = false, model::diffusion = false;
 
+MF corrected_fmod(double a, double b) {
+    /*
+        function for calculating remainder of a / b
+        work differently when a < 0
+    */
+    if (a >= 0)
+        return fmod(a, b);
+    else
+        return b + fmod(a, b);
+}
+
 model::model() : 
     particle_number(0), 
     potential_energy_tmp(0), 
@@ -422,10 +433,19 @@ void model::write_ovito(const fs::path& file, const int step) const {
     progressbar pBar(history.size() / step);
 
     for (size_t i = 0; i < history.size(); i += step) {
-        out << std::fixed << std::setprecision(8) << particle_number << "\n\n";
+        out << std::fixed << std::setprecision(8) << particle_number << "\n"
+            << "Lattice=\"" << size_of_box
+            << " 0 0 0 " << size_of_box
+            << " 0 0 0 " << size_of_box << "\" "
+            << "Properties=type:I:1:pos:R:3:radius:R:1\n";
 
-        for (int k = 0; k < particle_number; ++k)
-            out << "1 " << history[i][6*k] << ' ' << history[i][6*k+1] << ' ' << history[i][6*k+2] << "\n";
+        for (int k = 0; k < particle_number; ++k) {
+            out << "1 " 
+                << corrected_fmod(history[i][6*k], size_of_box) << ' '
+                << corrected_fmod(history[i][6*k+1], size_of_box) << ' '
+                << corrected_fmod(history[i][6*k+2], size_of_box) << ' '
+                << 0.3 << "\n";
+        }
 
         pBar.update();
     }
