@@ -10,6 +10,12 @@ MF model::size_of_box = 10;
 bool model::without_centering_CM = false;
 MF model::scale = false, model::diffusion = false;
 
+// constants for accerelation
+#define rad_s    1.244455060259808
+#define rad_c    1.737051854945982
+#define koeff_1 -3.292002800390959
+#define koeff_2 -4.864890082711485
+
 MF corrected_fmod(double a, double b) {
     /*
         function for calculating remainder of a / b
@@ -114,19 +120,27 @@ void model::update_acceleration() {
 
             MF L = sqrt(x * x + y * y + z * z);
 
-            //MF L6 = pow(L, -6); // L6 -- L^-6
-            //MF L8 = L6 / L / L; // L8 -- L^-8
+            if (L > rad_c)
+                continue;
 
-            MF k = 24 * ( 2 * pow(L, -14) - pow(L, -8) );
-            //MF k = 24 * ( 2 * L8 * L6 - L8 );
+            MF k;
+
+            if (rad_s < L && L <= rad_c) {
+                k = ( 3 * koeff_1 * (L - rad_c) * (L - rad_c) + 
+                    2 * koeff_2 * (L - rad_c) ) / L;
+
+                potential_energy_tmp += koeff_1 * (L - rad_c) * (L - rad_c) * (L - rad_c) + 
+                                        koeff_2 * (L - rad_c) * (L - rad_c);
+            } else {
+                k = 24 * ( 2 * pow(L, -14) - pow(L, -8) );
+                potential_energy_tmp += 4 * ( pow(L, -12) - pow(L, -6) );
+            }
+
             MF wx = x * k;
             MF wy = y * k;
             MF wz = z * k;
             Particles[i].update_w( wx,  wy,  wz);
             Particles[j].update_w(-wx, -wy, -wz);
-
-            potential_energy_tmp += 4 * ( pow(L, -12) - pow(L, -6) );
-            //potential_energy_tmp += 4 * ( L6 * L6 -  L6 );
         }
     }
 }
