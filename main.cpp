@@ -83,7 +83,7 @@ options_struct get_parameters(int argc, char** argv) {
         if ( compare(argv[i], "--ovito") ) {
             try {
                 options.ovito = true;
-                if (i < argc || argv[i + 1][0] == '-')
+                if (i + 1 == argc || argv[i + 1][0] == '-')
                     options.ovito_step = 1;
                 else 
                     options.ovito_step = std::stoi(argv[++i]);
