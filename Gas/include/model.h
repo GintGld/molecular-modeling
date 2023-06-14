@@ -55,5 +55,5 @@ public:
 
     static MF size_of_box;
     static bool without_centering_CM;
-    static MF scale, diffusion;
+    static bool scale, diffusion;
 };

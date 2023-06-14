@@ -8,7 +8,7 @@
 
 MF model::size_of_box = 10;
 bool model::without_centering_CM = false;
-MF model::scale = false, model::diffusion = false;
+bool model::scale = false, model::diffusion = false;
 
 // constants for accerelation
 #define rad_s    1.244455060259808
