@@ -80,6 +80,12 @@ options_struct get_parameters(int argc, char** argv) {
             } catch(std::exception& e) {throw e;}
             continue;
         }
+        if ( compare(argv[i], "--relax") ) {
+            try {
+                model::relaxation_time = std::stod(argv[++i]);
+            } catch(std::exception& e) {throw e;}
+            continue;
+        }
         if ( compare(argv[i], "--ovito") ) {
             try {
                 options.ovito = true;

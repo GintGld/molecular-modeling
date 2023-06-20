@@ -38,7 +38,7 @@ private:
 
     void save_point(const particle&);
     void commit();
-    void scale_particles(MF target_temp);
+    void scale_particles(MF target_temp, MF dt = 0);
 
     std::string header() const;
 
@@ -56,4 +56,5 @@ public:
     static MF size_of_box;
     static bool without_centering_CM;
     static bool scale, diffusion;
+    static MF relaxation_time;
 };

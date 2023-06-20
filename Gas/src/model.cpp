@@ -9,6 +9,7 @@
 MF model::size_of_box = 10;
 bool model::without_centering_CM = false;
 bool model::scale = false, model::diffusion = false;
+MF model::relaxation_time = 0;
 
 // constants for accerelation
 #define rad_s    1.244455060259808
@@ -183,11 +184,20 @@ void model::update_coordinates(MF dt) {
     }
 }
 
-void model::scale_particles(MF target_temp) {
+void model::scale_particles(MF target_temp, MF dt) {
     /*
         Scales particles' velocities
     */
-    MF coeff = sqrt(target_temp * 1.5 * particle_number / kinetic_energy_tmp);
+    //MF coeff = sqrt(target_temp * 1.5 * particle_number / kinetic_energy_tmp);
+    MF coeff = target_temp * 1.5 * particle_number / kinetic_energy_tmp; // == T/T(t)
+
+    if (relaxation_time == 0)       // velocity scaler case
+        coeff = sqrt(coeff);
+    else {                           // Berendsen weak coupling case
+        coeff = sqrt(1 + dt * (coeff - 1) / relaxation_time);
+        //coeff = 1 + .5 * dt * (coeff - 1) / relaxation_time;
+        //std::cout << coeff << ' ' << target_temp << ' ' << kinetic_energy_tmp / particle_number * 2 / 3 << "\n";
+    }
 
     for (particle& p : Particles) {
         p.vx *= coeff;
@@ -249,7 +259,7 @@ void model::simulate(MF time, MF dt, MF target_temp) {
 
         // scaling
         if (scale)
-            scale_particles(target_temp);
+            scale_particles(target_temp, dt);
 
         commit();
 
