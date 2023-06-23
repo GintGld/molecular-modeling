@@ -2,8 +2,7 @@
 build
 .exe
 Makefile
-model
-generator
+bin
 **.csv
 **.dat
 **.mdl
