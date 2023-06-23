@@ -26,13 +26,13 @@ int main(int argc, char** argv) {
 
     std::string sep = " ";
 
-    double density;
+    double density, temperature = 1.;
     int cells, seed = time(NULL);
 
-    bool f_density = false, f_cells = false;
+    bool f_density = false, f_cells = false, f_file = false;
 
     for (int i = 1; i < argc; ++i) {
-        if ( compare(argv[i], "-d") == 1 ) {
+        if ( compare(argv[i], "-d") ) {
             try {
                 density = std::stod(argv[++i]);
                 f_density = true;
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
             }
             continue;
         }
-        if ( compare(argv[i], "-c") == 1 ) {
+        if ( compare(argv[i], "-c") ) {
             try {
                 cells = std::stoi(argv[++i]);
                 f_cells = true;
@@ -52,11 +52,20 @@ int main(int argc, char** argv) {
             }
             continue;
         }
-        if ( compare(argv[i], "-f") == 1 ) {
+        if ( compare(argv[i], "-f") ) {
             file = fs::path(argv[++i]);
+            f_file = true;
             continue;
         }
-        if ( compare(argv[i], "--prefix") == 1 ) {
+        if ( compare(argv[i], "-t") ) {
+            try {
+                temperature = std::stod(argv[++i]);
+            } catch(...) {
+                cout << "Incorrect parameter for temperature\n";
+                return 1;
+            }
+        }
+        if ( compare(argv[i], "--prefix") ) {
             prefix = fs::path(argv[++i]);
             continue;
         }
@@ -75,16 +84,25 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (!f_density && !f_cells) {
-        cout << "Not enough parameters. Needed \"-d\" and \"-c\".\n";
+    if (!f_density || !f_cells || !f_file) {
+        cout << "Not enough parameters. Needed \"-d\", \"-c\", and \"-f\".\n";
         return 1;
     }
 
     std::default_random_engine gen(seed);
-    std::normal_distribution<double> dist(0, 1);
+    std::normal_distribution<double> theta(0, M_PI), phi(0, 2 * M_PI);
 
     double box_size = (cells - 1) / cbrt(density);
     double distance = box_size / cells;
+
+    cout << "Generating parameters:\n"
+         << "Density:                    " << density << "\n"
+         << "Cells:                      " << cells << "\n"
+         << "Box size:                   " << box_size << "\n"
+         << "Distance between particles: " << distance << "\n"
+         << "Number of particles:        " << (cells - 1) * (cells - 1) * (cells - 1) << "\n"
+         << "Temperature:                " << temperature << "\n"
+         << "Mean square velocity:       " << sqrt(3 * temperature) << "\n";
 
     std::ofstream out(prefix/file);
 
@@ -94,15 +112,23 @@ int main(int argc, char** argv) {
 
     out << box_size << sep << (cells - 1) * (cells - 1) * (cells - 1) << "\n";
 
-    for (int i = 1; i < cells; ++i) for (int j = 1; j < cells; ++j) for (int k = 1; k < cells; ++k)
-        out << i * distance << sep << j * distance << sep << k * distance << sep 
-            << dist(gen) << sep << dist(gen) << sep << dist(gen) << "\n";
+    //for (int i = 1; i < cells; ++i) for (int j = 1; j < cells; ++j) for (int k = 1; k < cells; ++k)
+    //    out << i * distance << sep << j * distance << sep << k * distance << sep 
+    //        << dist(gen) << sep << dist(gen) << sep << dist(gen) << "\n";
 
+    double velocity = sqrt(3 * temperature);
+
+    for (int i = 1; i < cells; ++i) for (int j = 1; j < cells; ++j) for (int k = 1; k < cells; ++k)
+        out << i * distance << sep << j * distance << sep << k * distance << sep
+            << velocity * sin(theta(gen)) * cos(phi(gen)) << sep
+            << velocity * sin(theta(gen)) * sin(phi(gen)) << sep
+            << velocity * cos(theta(gen)) << "\n";
     
     // technical info, model.cpp will not read this
-    out << "DENSITY: " << density << "\n"
-        << "CELLS:   " << cells << "\n"
-        << "SEED:    " << seed << "\n";
+    out << "DENS.: " << density << "\n"
+        << "CELLS: " << cells << "\n"
+        << "TEMP.: " << temperature << "\n"
+        << "SEED:  " << seed << "\n";
 
     out.close();
 }
