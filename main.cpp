@@ -130,8 +130,15 @@ int main(int argc, char** argv) {
     }
 
     // defined directories for saving data
-    fs::path input  = fs::current_path()/fs::path("configs")/options.input_file;
-    fs::path output = fs::current_path()/fs::path("outputs")/options.input_file.stem().concat(options.output_extension.string());
+    fs::path input  = fs::current_path()/options.input_file;
+    fs::path output_directory = fs::current_path()/fs::path("outputs");
+
+    if (!fs::exists(output_directory) || !fs::is_directory(output_directory)) {
+        cout << "Creating directory " << output_directory.string() << "\n";
+        fs::create_directory(output_directory);
+    }
+
+    fs::path output = output_directory/options.input_file.stem().concat(options.output_extension.string());
 
     cout << "input  file: " << input.string() << "\n"
          << "output file: " << output.string() << "\n"
