@@ -127,7 +127,7 @@ void model::update_acceleration() {
             MF k;
 
             if (rad_s < L && L <= rad_c) {
-                k = ( 3 * koeff_1 * (L - rad_c) * (L - rad_c) + 
+                k = - ( 3 * koeff_1 * (L - rad_c) * (L - rad_c) + 
                     2 * koeff_2 * (L - rad_c) ) / L;
 
                 potential_energy_tmp += koeff_1 * (L - rad_c) * (L - rad_c) * (L - rad_c) + 
