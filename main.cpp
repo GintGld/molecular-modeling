@@ -9,7 +9,8 @@ using std::cout;
 struct options_struct {
     fs::path input_file, output_extension;
     MF time, dt, target_temperature;
-    bool last_state = false, ovito = false;
+    bool ovito = false, save_state = false;
+    fs::path final_state_path;
     int ovito_step;
 
     bool f_time = false, f_dt = false, f_input = false, f_output = false;
@@ -65,8 +66,12 @@ options_struct get_parameters(int argc, char** argv) {
             options.f_output = true;
             continue;
         }
-        if ( compare(argv[i], "--last-state") ) {
-            options.last_state = true;
+        if ( compare(argv[i], "--save") ) {
+            options.save_state = true;
+            if (i + 1 == argc || argv[i + 1][0] == '-')
+                options.final_state_path = options.input_file;
+            else
+                options.final_state_path = argv[++i];
             continue;
         }
         if ( compare(argv[i], "--without-centering-CM") ) {
@@ -197,13 +202,9 @@ int main(int argc, char** argv) {
         cout << "XYZ file written to " << ovito_path.string() << "\n";
     }
 
-    if (options.last_state) {
-        fs::path last_state_path = input.parent_path()/
-            fs::path(input.stem().string() + "-last-state" +
-            input.extension().string());
+    if (options.save_state) {
+        gas.write_last_state(options.final_state_path);
 
-        gas.write_last_state(last_state_path);
-
-        cout << "Saved last state to " << last_state_path.string() << "\n";
+        cout << "Saved last state to " << options.final_state_path.string() << "\n";
     }
 }
