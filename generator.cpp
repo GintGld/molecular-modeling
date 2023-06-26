@@ -96,6 +96,7 @@ int main(int argc, char** argv) {
     double distance = box_size / cells;
 
     cout << "Generating parameters:\n"
+         << "File:                       " << (prefix/file).string() << "\n"
          << "Density:                    " << density << "\n"
          << "Cells:                      " << cells << "\n"
          << "Box size:                   " << box_size << "\n"
@@ -111,10 +112,6 @@ int main(int argc, char** argv) {
     }
 
     out << box_size << sep << (cells - 1) * (cells - 1) * (cells - 1) << "\n";
-
-    //for (int i = 1; i < cells; ++i) for (int j = 1; j < cells; ++j) for (int k = 1; k < cells; ++k)
-    //    out << i * distance << sep << j * distance << sep << k * distance << sep 
-    //        << dist(gen) << sep << dist(gen) << sep << dist(gen) << "\n";
 
     double velocity = sqrt(3 * temperature);
 
